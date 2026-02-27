@@ -63,6 +63,36 @@ async function generateImage(text) {
     return outputPath;
 }
 
+const acceptOurWisdom = async (ctx) => {
+  const chatId = ctx.chat.id;
+
+    // Берем последнее сообщение до команды
+    const text = lastMessages.get(chatId);
+
+    if (!text) {
+        return ctx.reply("В чате пока нет мудрости для генерации.");
+    }
+
+    try {
+        // Генерируем картинку
+        const image = await generateImage(text);
+        await ctx.replyWithPhoto({ source: image });
+    } catch (err) {
+        console.error(err);
+        ctx.reply("Ошибка при генерации мудрости.");
+    }
+}
+
+const shareYourWisdom = async (ctx) => {
+      try { await ctx.replyWithPhoto({ source: await generateImage(getRandomWisdom()) }); }
+    catch(e){ console.error(e); ctx.reply("Ошибка генерации"); }
+}
+
+const acceptMyWisdom = (ctx) => {
+        awaitingInput.set(ctx.chat.id, "accept_our");
+    ctx.reply("Введите текст мудрости, чтобы я сгенерировал изображение:");
+}
+
 // ===== Меню =====
 bot.command("start", (ctx) => {
     ctx.reply(`Привет! Я Мудрый Кё 🤍
@@ -82,36 +112,14 @@ bot.command("start", (ctx) => {
     );
 });
 
-bot.hears("Запросить мудрость", async (ctx) => {
-    try { await ctx.replyWithPhoto({ source: await generateImage(getRandomWisdom()) }); }
-    catch(e){ console.error(e); ctx.reply("Ошибка генерации"); }
-});
+bot.hears("Запросить мудрость", async (ctx) => await shareYourWisdom(ctx));
+bot.command("shareyourwisdom", async (ctx) => await shareYourWisdom(ctx));
 
-// Остальные кнопки — аналогично
-bot.hears("Дать мудрость чата", async (ctx) => {
-    const chatId = ctx.chat.id;
+bot.hears("Дать мудрость чата", async (ctx) => await acceptOurWisdom(ctx));
+bot.command("acceptourwisdom", async (ctx) => await acceptOurWisdom(ctx));
 
-    // Берем последнее сообщение до команды
-    const text = lastMessages.get(chatId);
-
-    if (!text) {
-        return ctx.reply("В чате пока нет мудрости для генерации.");
-    }
-
-    try {
-        // Генерируем картинку
-        const image = await generateImage(text);
-        await ctx.replyWithPhoto({ source: image });
-    } catch (err) {
-        console.error(err);
-        ctx.reply("Ошибка при генерации мудрости.");
-    }
-});
-
-bot.hears("Дать свою мудрость", async (ctx) => {
-    awaitingInput.set(ctx.chat.id, "accept_our");
-    ctx.reply("Введите текст мудрости, чтобы я сгенерировал изображение:");
-});
+bot.hears("Дать свою мудрость", (ctx) => acceptMyWisdom(ctx));
+bot.command("acceptmywisdom", async (ctx) => await acceptMyWisdom(ctx));
 
 bot.on("message", async (ctx) => {
     const chatId = ctx.chat.id;
