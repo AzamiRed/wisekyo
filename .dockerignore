@@ -1,5 +1,7 @@
 node_modules/
 .env
+.git/
 temp/
 *.tar
 npm-debug.log*
+test/
